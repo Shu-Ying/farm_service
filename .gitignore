@@ -1,0 +1,38 @@
+# Rust build output; Cargo.lock is intentionally tracked for this application.
+/target/
+/dist/
+**/*.rs.bk
+*.pdb
+profraw
+*.profraw
+*.profdata
+/coverage/
+/tarpaulin-report.html
+
+# Local runtime state and secrets.
+/data/
+/logs/
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.pem
+*.key
+
+# Editors and operating systems.
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
