@@ -16,6 +16,8 @@ pub struct Config {
     pub asset_manifest: Option<PathBuf>,
     /// Optional font archive manifest; includes the original OFL license.
     pub font_manifest: Option<PathBuf>,
+    /// Optional catalogue root containing latest and immutable releases.
+    pub catalogue_dir: Option<PathBuf>,
 }
 
 impl Config {
@@ -36,6 +38,7 @@ impl Config {
             api_token,
             asset_manifest: env::var_os("FARM_ASSET_MANIFEST").map(PathBuf::from),
             font_manifest: env::var_os("FARM_FONT_MANIFEST").map(PathBuf::from),
+            catalogue_dir: env::var_os("FARM_CATALOGUE_DIR").map(PathBuf::from),
             data_dir: env::var_os("FARM_DATA_DIR")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| PathBuf::from("data")),

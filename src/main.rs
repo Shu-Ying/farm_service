@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use farm_service::{api, assets, config::Config, db};
+use farm_service::{api, assets, catalogue, config::Config, db};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -30,6 +30,12 @@ async fn main() -> Result<()> {
         .map(assets::AssetBundle::load_font)
         .transpose()
         .context("font startup verification failed")?;
+    let catalogue = config
+        .catalogue_dir
+        .as_deref()
+        .map(catalogue::CatalogueStore::load)
+        .transpose()
+        .context("catalogue startup verification failed")?;
     std::fs::create_dir_all(&config.data_dir)?;
     let pool = db::open_database(&config.data_dir.join("farm_service.sqlite3"))
         .await
@@ -38,7 +44,8 @@ async fn main() -> Result<()> {
     tracing::info!(address = %listener.local_addr()?, "service_ready");
     let app = api::router(pool.clone(), config.api_token)
         .merge(assets::router(bundle))
-        .merge(assets::font_router(fonts));
+        .merge(assets::font_router(fonts))
+        .merge(catalogue::router(catalogue));
     let result = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown())
         .await;

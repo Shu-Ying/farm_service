@@ -11,6 +11,10 @@
 - `GET /v1/assets/{sha256}/assets.zip`：下载启动时校验过的素材快照，支持ETag。
 - `GET /v1/fonts/manifest.json`：独立字体资源清单。
 - `GET /v1/fonts/{sha256}/assets.zip`：原版小赖字体与完整 OFL 许可，支持 ETag。
+- `GET /v1/catalogue/manifest.json`：独立作物目录的最新完整版本。
+- `GET /v1/catalogue/releases/{release}/{file}`：公开只读历史目录文件，支持 ETag。
+- [作物数据、图片维护与不可变发布步骤](docs/catalogue.md)；正式来源为
+  `catalogue/source/`，机器人启动时检查更新。
 - [资源分发接口与三端接入约定](docs/assets.md)。
 - 素材发布文件位于根目录 `assets/manifest.json` 和 `assets/assets.zip`；
   ZIP 仅由本服务仓库发布，三个插件分发包不包含 ZIP。
@@ -68,6 +72,7 @@ cargo run --locked
 | `RUST_LOG` | `farm_service=info` |
 | `FARM_ASSET_MANIFEST` | 可选，建议 `./assets/manifest.json`；同目录须有assets.zip；未设置时资源接口返回503 |
 | `FARM_FONT_MANIFEST` | 可选，设为 `./fonts/manifest.json`；同目录须有 assets.zip；未设置时字体接口返回503 |
+| `FARM_CATALOGUE_DIR` | 可选，设为 `./catalogue`；启动校验最新及全部历史版本，未设置返回503；更新后重启生效 |
 
 相对目录以进程工作目录为基准；生产建议使用固定绝对路径。
 `.env.example` 只是模板，程序**不会自动加载 .env**。
@@ -129,6 +134,8 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8080/v1/users/qq/12345678" `
 cargo fmt --check
 cargo test --locked --all-targets
 cargo clippy --locked --all-targets -- -D warnings
+python -m unittest discover -s tests -p test_prepare_catalogue.py
+python scripts/prepare_catalogue.py --version catalogue-20261026-1 --check
 ```
 
 测试覆盖鉴权、资料校验、昵称更新、重启持久化、平台隔离、并发建档、
