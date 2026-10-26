@@ -51,6 +51,10 @@ pub struct Manifest {
 
 impl Manifest {
     pub fn validate(&self) -> Result<()> {
+        self.validate_for("assets")
+    }
+
+    fn validate_for(&self, namespace: &str) -> Result<()> {
         ensure!(self.schema == 1, "unsupported asset manifest schema");
         ensure!(
             !self.version.is_empty()
@@ -84,7 +88,7 @@ impl Manifest {
         ensure!(
             service_url
                 .path()
-                .ends_with(&format!("/v1/assets/{}/assets.zip", self.sha256)),
+                .ends_with(&format!("/v1/{namespace}/{}/assets.zip", self.sha256)),
             "farm_service URL must include the bundle SHA256"
         );
         Ok(())
@@ -128,10 +132,19 @@ pub struct AssetBundle {
 impl AssetBundle {
     /// Load manifest.json and its sibling assets.zip, verifying both at startup.
     pub fn load(manifest_path: &Path) -> Result<Self> {
+        Self::load_for(manifest_path, "assets")
+    }
+
+    /// Load an independent font archive with the same integrity contract.
+    pub fn load_font(manifest_path: &Path) -> Result<Self> {
+        Self::load_for(manifest_path, "fonts")
+    }
+
+    fn load_for(manifest_path: &Path, namespace: &str) -> Result<Self> {
         let manifest: Manifest =
             serde_json::from_slice(&read_bounded(manifest_path, MAX_MANIFEST_BYTES)?)
                 .context("invalid asset manifest JSON")?;
-        manifest.validate()?;
+        manifest.validate_for(namespace)?;
         let content = read_bounded(
             &manifest_path.with_file_name("assets.zip"),
             MAX_BUNDLE_BYTES,
@@ -166,6 +179,14 @@ pub fn router(bundle: Option<AssetBundle>) -> Router {
     Router::new()
         .route("/v1/assets/manifest.json", get(get_manifest))
         .route("/v1/assets/{sha256}/assets.zip", get(download))
+        .with_state(bundle)
+}
+
+/// Font distribution is independent of the picture bundle and profile APIs.
+pub fn font_router(bundle: Option<AssetBundle>) -> Router {
+    Router::new()
+        .route("/v1/fonts/manifest.json", get(get_manifest))
+        .route("/v1/fonts/{sha256}/assets.zip", get(download))
         .with_state(bundle)
 }
 

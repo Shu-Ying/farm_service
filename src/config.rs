@@ -14,6 +14,8 @@ pub struct Config {
     pub log_dir: PathBuf,
     /// Optional verified asset manifest; sibling assets.zip is loaded once.
     pub asset_manifest: Option<PathBuf>,
+    /// Optional font archive manifest; includes the original OFL license.
+    pub font_manifest: Option<PathBuf>,
 }
 
 impl Config {
@@ -33,6 +35,7 @@ impl Config {
                 .context("invalid FARM_BIND address")?,
             api_token,
             asset_manifest: env::var_os("FARM_ASSET_MANIFEST").map(PathBuf::from),
+            font_manifest: env::var_os("FARM_FONT_MANIFEST").map(PathBuf::from),
             data_dir: env::var_os("FARM_DATA_DIR")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| PathBuf::from("data")),

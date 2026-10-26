@@ -24,13 +24,21 @@ async fn main() -> Result<()> {
         .map(assets::AssetBundle::load)
         .transpose()
         .context("asset startup verification failed")?;
+    let fonts = config
+        .font_manifest
+        .as_deref()
+        .map(assets::AssetBundle::load_font)
+        .transpose()
+        .context("font startup verification failed")?;
     std::fs::create_dir_all(&config.data_dir)?;
     let pool = db::open_database(&config.data_dir.join("farm_service.sqlite3"))
         .await
         .context("database startup failed")?;
     let listener = tokio::net::TcpListener::bind(config.bind).await?;
     tracing::info!(address = %listener.local_addr()?, "service_ready");
-    let app = api::router(pool.clone(), config.api_token).merge(assets::router(bundle));
+    let app = api::router(pool.clone(), config.api_token)
+        .merge(assets::router(bundle))
+        .merge(assets::font_router(fonts));
     let result = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown())
         .await;

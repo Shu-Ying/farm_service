@@ -9,6 +9,8 @@
 - `GET /health`：公开就绪检查，实际检查数据库。
 - `GET /v1/assets/manifest.json`：公开素材清单，含版本、SHA256、大小及三源绝对URL。
 - `GET /v1/assets/{sha256}/assets.zip`：下载启动时校验过的素材快照，支持ETag。
+- `GET /v1/fonts/manifest.json`：独立字体资源清单。
+- `GET /v1/fonts/{sha256}/assets.zip`：原版小赖字体与完整 OFL 许可，支持 ETag。
 - [资源分发接口与三端接入约定](docs/assets.md)。
 - 素材发布文件位于根目录 `assets/manifest.json` 和 `assets/assets.zip`；
   ZIP 仅由本服务仓库发布，三个插件分发包不包含 ZIP。
@@ -65,6 +67,7 @@ cargo run --locked
 | `FARM_LOG_DIR` | `./logs`，保存每日滚动日志 |
 | `RUST_LOG` | `farm_service=info` |
 | `FARM_ASSET_MANIFEST` | 可选，建议 `./assets/manifest.json`；同目录须有assets.zip；未设置时资源接口返回503 |
+| `FARM_FONT_MANIFEST` | 可选，设为 `./fonts/manifest.json`；同目录须有 assets.zip；未设置时字体接口返回503 |
 
 相对目录以进程工作目录为基准；生产建议使用固定绝对路径。
 `.env.example` 只是模板，程序**不会自动加载 .env**。
@@ -133,6 +136,13 @@ cargo clippy --locked --all-targets -- -D warnings
 
 ## 开源协议
 
+字体资源独立于服务代码许可。`fonts/Xiaolai-Regular.ttf` 为未经修改的
+小赖字体 v3.126，采用 SIL OFL 1.1；完整版权与许可见
+[OFL-Xiaolai.txt](fonts/OFL-Xiaolai.txt)。`fonts/assets.zip` 同时包含字体
+和许可，不得单独出售字体文件。字体包通过 GitHub/Gitea 的本仓库
+`fonts/assets.zip` raw 地址或上述服务接口分发，插件缓存时校验摘要。
+资源迁移仅准备本地文件，须发布此仓库或部署服务后远端才能提供新版资源。
+
 Copyright (c) 2026 Shu-Ying。
 本项目采用 GNU Affero General Public License v3.0，
 SPDX 标识为 `AGPL-3.0-only`，完整条款见 [LICENSE](LICENSE)。
@@ -142,3 +152,7 @@ SPDX 标识为 `AGPL-3.0-only`，完整条款见 [LICENSE](LICENSE)。
 显著提供免费取得该修改版本对应源码的机会。
 源码地址应指向实际运行版本，不能仅指向不包含这些修改的上游仓库。
 协议针对程序及其对应源码，不要求公开 API 令牌、用户资料或数据库内容。
+
+## 致谢
+
+- [小赖字体](https://github.com/lxgw/kose-font) *lxgw 提供的开源中文手写字体，采用 SIL OFL 1.1，分发时附带完整字体许可*

@@ -40,6 +40,40 @@ fn save(directory: &tempfile::TempDir, manifest: &Manifest) {
 }
 
 #[tokio::test]
+async fn independent_font_archive_is_verified_and_public() {
+    let (directory, mut manifest, content) = fixture();
+    manifest.sources.farm_service = format!(
+        "https://farm.example/v1/fonts/{}/assets.zip",
+        manifest.sha256
+    );
+    save(&directory, &manifest);
+    let path = directory.path().join("manifest.json");
+    assert!(AssetBundle::load(&path).is_err());
+    let bundle = AssetBundle::load_font(&path).unwrap();
+    let app = assets::font_router(Some(bundle));
+    let uri = format!("/v1/fonts/{}/assets.zip", manifest.sha256);
+    let response = app
+        .clone()
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(to_bytes(response.into_body(), 4096).await.unwrap(), content);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/v1/fonts/unknown/assets.zip")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    std::fs::write(directory.path().join("assets.zip"), b"bad").unwrap();
+    assert!(AssetBundle::load_font(&path).is_err());
+}
+
+#[tokio::test]
 async fn public_manifest_download_cache_and_snapshot() {
     let (directory, manifest, content) = fixture();
     let bundle = AssetBundle::load(&directory.path().join("manifest.json")).unwrap();
